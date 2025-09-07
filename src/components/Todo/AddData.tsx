@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import type { Project, Package, Report, Payload } from "./types";
 import { useData } from "../../context/DataContext";
+import { addElement } from "../../utils/indexedDB";
 
 const AddData = ({
   dataToUpdate,
@@ -13,7 +14,7 @@ const AddData = ({
   setShowAddData: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const [projectName, setProjectName] = useState("");
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, setProject] = useState<Project[] | null>(null);
 
   const [packageForm, setPackageForm] = useState({ name: "", description: "" });
   const [packages, setPackages] = useState<Package[]>([]);
@@ -34,7 +35,7 @@ const AddData = ({
     const packagesData = dataToUpdate.packages ?? [];
     const reportsData = packagesData.flatMap((pkg) => pkg.reports ?? []);
 
-    setProject(dataToUpdate);
+    setProject([dataToUpdate]);
     setProjectName(dataToUpdate.project_name);
     setPackages(packagesData);
     setReports(reportsData);
@@ -46,9 +47,10 @@ const AddData = ({
     const newProject: Project = {
       id: generateUUID(),
       project_name: projectName,
+      created_at: new Date().toISOString(),
     };
 
-    setProject(newProject);
+    setProject([newProject]);
     setProjectName("");
   };
 
@@ -60,7 +62,8 @@ const AddData = ({
       id: generateUUID(),
       name,
       description,
-      project_id: project.id,
+      project_id: project[0].id,
+      created_at: new Date().toISOString(),
     };
 
     setPackages([...packages, newPackage]);
@@ -76,13 +79,14 @@ const AddData = ({
       name,
       description,
       package_id: packageId,
+      created_at: new Date().toISOString(),
     };
 
     setReports([...reports, newReport]);
     setReportForm({ name: "", description: "", packageId: "" });
   };
 
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
     if (!project) return;
 
     const payload: Payload = {
@@ -91,8 +95,16 @@ const AddData = ({
       reports,
     };
 
-    if (dataToUpdate) updateData(payload, dataToUpdate);
-    else addData(payload);
+    const isOnline = navigator.onLine;
+
+    if (isOnline) {
+      if (dataToUpdate) await updateData(payload, dataToUpdate);
+      else await addData(payload);
+    } else {
+      await addElement("project", project);
+      if (packages.length) await addElement("packages", packages);
+      if (reports.length) await addElement("reports", reports);
+    }
 
     setProject(null);
     setPackages([]);
@@ -176,7 +188,7 @@ const AddData = ({
         </div>
 
         {project && (
-          <DataTable columns={["ID", "Project Name"]} data={[project]} />
+          <DataTable columns={["ID", "Project Name"]} data={project} />
         )}
       </div>
 

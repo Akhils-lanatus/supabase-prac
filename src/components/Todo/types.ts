@@ -2,6 +2,7 @@ export type Project = {
   id: string;
   project_name: string;
   packages?: Package[];
+  created_at?: string;
 };
 
 export type Report = {
@@ -9,6 +10,7 @@ export type Report = {
   name: string;
   description: string;
   package_id: string;
+  created_at?: string;
 };
 
 export type Package = {
@@ -16,11 +18,13 @@ export type Package = {
   name: string;
   description: string;
   project_id: string;
+  created_at?: string;
+
   reports?: Report[];
 };
 
 export type Payload = {
-  project: Project;
+  project: Project[];
   packages: Package[];
   reports: Report[];
 };

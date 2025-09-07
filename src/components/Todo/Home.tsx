@@ -11,16 +11,29 @@ const Home = () => {
     fetchAllData,
     data: projects,
     loading,
+    loadingMessage,
     error,
     deleteProject,
   } = useData();
   const [showAddData, setShowAddData] = useState(false);
+  const [offline, setOffline] = useState<boolean>(!navigator.onLine);
 
   const [dataToUpdate, setDataToUpdate] = useState<Project | null>(null);
 
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
+
+  useEffect(() => {
+    const handleOnline = () => setOffline(false);
+    const handleOffline = () => setOffline(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const handleUpdateProject = (project: Project) => {
     window.scrollTo({
@@ -47,6 +60,14 @@ const Home = () => {
         <div>
           <h1>Coolie Power House</h1>
           <h2>{user?.email}</h2>
+          {offline && (
+            <div style={{ textAlign: "center", marginTop: 8 }}>
+              <span className="error-text" style={{ color: "#0369a1" }}>
+                You are offline. If you add data it will be stored locally and
+                auto-synced once online.
+              </span>
+            </div>
+          )}
         </div>
         <button
           onClick={() => {
@@ -79,7 +100,7 @@ const Home = () => {
           <div className="loading-container">
             <div className="loading-spinner">
               <div className="spinner"></div>
-              <span>Loading projects...</span>
+              <span>{loadingMessage || "Loading..."}</span>
             </div>
           </div>
         )}
@@ -109,6 +130,7 @@ const Home = () => {
                 project={project}
                 onUpdate={handleUpdateProject}
                 onDelete={handleDeleteProject}
+                offline={offline}
               />
             );
           })}
