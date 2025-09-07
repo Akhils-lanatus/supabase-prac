@@ -1,0 +1,24 @@
+Practical Task: Supabase + React (TypeScript) Offline-First Workflow
+
+This practical task is designed to evaluate your ability to build an offline-first workflow using Supabase authentication, React (with TypeScript), and IndexedDB/local storage for offline data. The goal is to implement login/register functionality with Supabase Auth and build a workflow to manage Projects → Packages → Reports that can work offline and sync automatically when the database is online.
+
+Requirements
+1. **Authentication**
+Implement Login and Register using Supabase Auth (email + password).
+Store authentication state locally so users stay logged in.
+
+2. **Workflow (Offline + Online Sync)**
+Entities:
+• Project → Fields: id, project_name
+• Package → Fields: id, name, description, project_id
+• Report → Fields: id, name, description, package_id
+The workflow is: Create Project → Add Packages under Project → Add Reports under Package.
+Users should be able to create these items offline (stored in IndexedDB).
+Once the internet is available, offline data must sync automatically with Supabase tables.
+
+3. **Listing UI**
+Display Projects, Packages, and Reports in a nested card format:
+• Project Card → List of Packages inside → Reports under each Package.
+
+Deliverables
+React + TypeScript app with Supabase integr
