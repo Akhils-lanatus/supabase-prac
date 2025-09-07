@@ -39,7 +39,10 @@ const DataProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(true);
     setError("");
     try {
-      const { data: dbData, error } = await supabase.from("project").select(`
+      const { data: dbData, error } = await supabase
+        .from("project")
+        .select(
+          `
         id,
         project_name,
         packages(
@@ -54,7 +57,9 @@ const DataProvider = ({ children }: { children: React.ReactNode }) => {
             package_id
           )
         )
-      `);
+      `
+        )
+        .order("created_at", { ascending: false });
       if (error) throw error;
       setData(dbData || []);
     } catch (error: any) {
@@ -111,26 +116,55 @@ const DataProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateData = async (payload: Payload, oldData: Project) => {
-    const hasNewPackages =
-      payload.packages.length > 0 &&
-      oldData.packages &&
-      oldData.packages.length > 0 &&
-      payload.packages.length > oldData.packages.length;
+    const alreadyAvailablePackages = new Set(
+      oldData.packages?.map((pkg) => pkg.id)
+    );
+    const alreadyAvailableReports = new Set(
+      oldData.packages?.flatMap((pkg) => pkg.reports?.map((rep) => rep.id))
+    );
 
-    const payloadReportsLength = payload.reports.length;
-    const flatOldReports = (oldData.packages ?? []).flatMap(
-      (pkg) => pkg.reports ?? []
-    ).length;
+    const newPackages = payload.packages.filter(
+      (pkg) => !alreadyAvailablePackages.has(pkg.id)
+    );
+    const newReports = payload.reports.filter(
+      (report) => !alreadyAvailableReports.has(report.id)
+    );
 
-    console.log({ payloadReportsLength, flatOldReports, hasNewPackages });
+    if (newPackages.length === 0 && newReports.length === 0) return;
+    try {
+      for (const pkg of newPackages) {
+        delete pkg.reports;
+        try {
+          const { error: packageError } = await supabase
+            .from("packages")
+            .insert(pkg);
 
-    const { error } = await supabase
-      .from("project")
-      .update(payload.project)
-      .eq("id", payload.project.id);
-    if (error) {
-      setError("Error inserting project: " + (error?.message ?? error ?? ""));
-      return;
+          if (packageError) {
+            throw new Error("Error inserting package: " + packageError.message);
+          }
+        } catch (error: any) {
+          setError(error.message ?? "Error while inserting package");
+        }
+      }
+
+      for (const report of newReports) {
+        try {
+          const { error: reportError } = await supabase
+            .from("reports")
+            .insert(report);
+
+          if (reportError) {
+            throw new Error("Error inserting report: " + reportError.message);
+          }
+        } catch (error: any) {
+          setError(error.message ?? "Error while inserting report");
+        }
+      }
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+      fetchAllData();
     }
   };
 

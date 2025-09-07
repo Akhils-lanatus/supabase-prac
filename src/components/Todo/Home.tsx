@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useData } from "../../context/DataContext";
 import AddData from "./AddData";
 import ProjectCard from "./ProjectCard";
-import { useData } from "../../context/DataContext";
 import type { Project } from "./types";
 
 const Home = () => {
@@ -23,6 +23,11 @@ const Home = () => {
   }, [fetchAllData]);
 
   const handleUpdateProject = (project: Project) => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
     setShowAddData(true);
     setDataToUpdate(project);
   };
@@ -30,7 +35,7 @@ const Home = () => {
   const handleDeleteProject = (project: Project) => {
     if (
       window.confirm(
-        "Kya aapko yeh project delete krna hai? Whose id is: " + project.id
+        `Confirm Delete "${project.project_name}"? It will also delete all related packages and reports`
       )
     )
       deleteProject(project.id);
